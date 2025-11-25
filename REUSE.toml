@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = ["supply-chain/*", "Cargo.lock", "*.svg"]
+precedence = "closest"
+SPDX-FileCopyrightText = "Copyright © 2025 hashcatHitman"
+SPDX-License-Identifier = "Apache-2.0 OR MIT"

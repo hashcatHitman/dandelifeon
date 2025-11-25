@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: Copyright © 2025 hashcatHitman
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+name: CI
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  MSRV: 1.91.1
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  quality-control:
+    name: Quality Control
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Nightly Install
+        run: rustup toolchain add nightly && rustup component add --toolchain nightly rustfmt clippy
+      - name: Format Check (Nightly)
+        run: cargo +nightly fmt --verbose --all --check
+      - name: Clippy (Nightly)
+        run: cargo +nightly clippy --locked --workspace --all-targets --all-features -- -D warnings -Zcrate-attr=feature"(strict_provenance_lints,unqualified_local_imports)"
+
+  build-test-msrv:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    name: Build & Test (${{ matrix.os }}) (MSRV)
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: MSRV Install
+        run: rustup toolchain add ${MSRV}
+      - name: Build
+        run: cargo +${MSRV} build --verbose --workspace --all-targets --all-features --locked
+      - name: Tests
+        run: cargo +${MSRV} test --verbose --workspace --all-targets --all-features --locked
+      - name: Doctests
+        run: cargo +${MSRV} test --verbose --workspace --doc --all-features --locked
+
+  build-test-nightly:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    name: Build & Test (${{ matrix.os }}) (Nightly)
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Build
+        run: cargo +nightly build --verbose --workspace --all-targets --all-features --locked
+      - name: Tests
+        run: cargo +nightly test --verbose --workspace --all-targets --all-features --locked
+      - name: Doctests
+        run: cargo +nightly test --verbose --workspace --doc --all-features --locked
