@@ -17,7 +17,7 @@
 //!              2 flower_patch[i] = Site_abandonment(flower_patch[i])
 //!              3 flower_patch[i] = Neighbourhood_shrinking(flower_patch[i])
 //!        iii for i = nb, ..., ns
-//!              1 flower_patch[i] = Global_search(flower_patch[i])}
+//!              1 flower_patch[i] = Global_search(flower_patch[i])
 //! ```
 
 use core::array;
@@ -95,10 +95,11 @@ where
 
     /// Explore random nearby [`Colony::Flower`]s based on the radius size. The
     /// current best is also provided for consideration.
-    fn explore(
+    fn explore<R: Rng>(
         origin: &Self::Flower,
         current_best: &Scout<N_SCOUTS, Self>,
         radius: usize,
+        rng: &mut R,
     ) -> Self::Flower;
 
     /// Return `true` when it is time to stop searching. Use the implementor of
@@ -174,7 +175,7 @@ where
                 reason = "index is correct if invariants are upheld"
             )]
             for i in 0..Self::BEST_SITES {
-                flower_patches[i].local_search(&current_best);
+                flower_patches[i].local_search(&current_best, rng);
                 flower_patches[i].abandonment(&mut current_best, rng);
                 flower_patches[i].shrinking();
             }
@@ -287,13 +288,18 @@ where
     }
 
     /// Have the foragers explore nearby [`Colony::Flower`]s.
-    pub(crate) fn local_search(&mut self, current_best: &Scout<NS, Hive>) {
+    pub(crate) fn local_search<R: Rng>(
+        &mut self,
+        current_best: &Scout<NS, Hive>,
+        rng: &mut R,
+    ) {
         self.stagnation = true;
         for _ in 0..self.foragers {
             let new_solution = Hive::explore(
                 &self.scout.solution,
                 current_best,
                 self.neighbourhood,
+                rng,
             );
             let new_scout: Scout<NS, Hive> = Scout::with_solution(new_solution);
             if new_scout.fitness < self.scout.fitness {
@@ -327,6 +333,11 @@ where
             } else {
                 if self.scout.fitness < current_best.fitness {
                     *current_best = self.scout;
+                    // Just in case...
+                    println!(
+                        "New best during abandonment:\n\tFitness:{}\n\tSolution:\n{}",
+                        current_best.fitness, current_best.solution
+                    );
                 }
                 *self = Self::new(rng);
             }

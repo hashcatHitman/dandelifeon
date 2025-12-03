@@ -8,9 +8,8 @@
 use core::cmp::Ordering;
 use core::fmt::{Display, Formatter, Result};
 
-use rand::rngs::SmallRng;
+use rand::Rng;
 use rand::seq::SliceRandom as _;
-use rand::{Rng as _, SeedableRng as _};
 
 use crate::bees::{Colony, Scout};
 use crate::simulation::PetriDish;
@@ -105,28 +104,24 @@ impl Colony<60> for Hive {
         }
     }
 
-    fn explore(
+    fn explore<R: Rng>(
         origin: &Self::Flower,
         current_best: &Scout<60, Self>,
         radius: usize,
+        rng: &mut R,
     ) -> Self::Flower {
-        let mut rng = SmallRng::seed_from_u64(42);
         if radius == (25 * 25) {
             let new: Self::Flower = rng.random();
             return new;
         }
-        let mut base: Self::Flower = *origin;
-
-        if radius <= Self::MINIMUM_RADIUS {
-            if rng.random_bool(0.5) {
-                base = Self::Flower::OPTIMAL_100_ROUND;
-            } else {
-                base = current_best.solution();
-            }
-        }
+        let mut base: Self::Flower = if radius <= Self::MINIMUM_RADIUS {
+            current_best.solution()
+        } else {
+            *origin
+        };
         let mut coords: [(u8, u8); 624] = Self::Flower::NONCENTER_COORDS;
 
-        coords.shuffle(&mut rng);
+        coords.shuffle(rng);
 
         for (x, y) in coords.into_iter().take(radius) {
             let value: u8 = rng.random_range(0..3);
@@ -136,13 +131,7 @@ impl Colony<60> for Hive {
     }
 
     fn stopping_condition(&mut self) -> bool {
-        if self.iters < 5000_usize {
-            self.iters = self.iters.saturating_add(1);
-            false
-        } else {
-            true
-        }
-        // self.iters += 1;
-        // false
+        // Just keep going.
+        false
     }
 }

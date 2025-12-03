@@ -16,7 +16,7 @@ SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #### Botania
 
-_Botania_ is a tech mod for _Minecraft_ created by Vazkii,with a focus on
+_Botania_ is a tech mod for _Minecraft_ created by Vazkii, with a focus on
 "natural magic". The primary resource in the mod is "mana", which is primarily
 obtained by means of specially crafted "generating flora". Some are trivial,
 such as "Hydroangeas", which consume nearby water and slowly produce mana.

@@ -48,6 +48,10 @@ impl PetriDish {
     /// algorithm in 2016.
     ///
     /// [the setup found by Cobra1117]: https://www.reddit.com/r/botania/comments/5by0jl/optimal_100round_dandelifeon_setup/
+    #[expect(
+        dead_code,
+        reason = "Didn't want to use this when generating solutions to present."
+    )]
     pub(crate) const OPTIMAL_100_ROUND: Self = {
         let mut current_record: Self = Self::new();
 
